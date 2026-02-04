@@ -1,0 +1,16 @@
+.env
+.DS_Store
+.ui.pid
+.ui_state.json
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+venv/
+output/
+uploads/
+inputs/
+*.pdf
+*.log
