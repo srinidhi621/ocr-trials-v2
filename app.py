@@ -197,6 +197,20 @@ def run_pipeline_background(run_id: str):
 # API Endpoints
 # ============================================================================
 
+@app.route("/health")
+def health():
+    """Health check endpoint for Azure."""
+    return jsonify({
+        "status": "healthy",
+        "version": "1.0",
+        "timestamp": datetime.now().isoformat(),
+        "directories": {
+            "output": str(OUTPUT_DIR.exists()),
+            "uploads": str(UPLOAD_DIR.exists()),
+        }
+    })
+
+
 @app.route("/")
 def index():
     """Serve the main HTML page."""
@@ -209,12 +223,22 @@ def serve_static(filename):
     return send_from_directory(STATIC_DIR, filename)
 
 
+@app.errorhandler(Exception)
+def handle_error(error):
+    """Handle all exceptions and return JSON instead of HTML."""
+    error_msg = f"{type(error).__name__}: {str(error)}"
+    print(f"Error: {error_msg}")
+    traceback.print_exc()
+    return jsonify({"error": error_msg}), 500
+
+
 @app.route("/run", methods=["POST"])
 def start_run():
     """Upload PDF and start pipeline run."""
-    # Check for PDF file
-    if "pdf" not in request.files:
-        return jsonify({"error": "No PDF file provided"}), 400
+    try:
+        # Check for PDF file
+        if "pdf" not in request.files:
+            return jsonify({"error": "No PDF file provided"}), 400
     
     pdf_file = request.files["pdf"]
     if pdf_file.filename == "":
@@ -254,15 +278,20 @@ def start_run():
         signature_report=signature_report,
     )
     
-    # Start pipeline in background thread
-    thread = threading.Thread(target=run_pipeline_background, args=(run_id,), daemon=True)
-    thread.start()
-    
-    return jsonify({
-        "run_id": run_id,
-        "status": run.status,
-        "output_dir": output_dir,
-    })
+        # Start pipeline in background thread
+        thread = threading.Thread(target=run_pipeline_background, args=(run_id,), daemon=True)
+        thread.start()
+        
+        return jsonify({
+            "run_id": run_id,
+            "status": run.status,
+            "output_dir": output_dir,
+        })
+    except Exception as e:
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        print(f"Error in start_run: {error_msg}")
+        traceback.print_exc()
+        return jsonify({"error": error_msg}), 500
 
 
 @app.route("/status/<run_id>")
@@ -2282,4 +2311,20 @@ LOG_TEMPLATE = """<!DOCTYPE html>
 
 if __name__ == "__main__":
     print(f"Starting OCR Pipeline UI on http://127.0.0.1:{PORT}")
+    print(f"Output directory: {OUTPUT_DIR}")
+    print(f"Upload directory: {UPLOAD_DIR}")
+    print(f"State file: {STATE_FILE}")
+    
+    # Check for required environment variables
+    required_vars = [
+        "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT",
+        "AZURE_DOCUMENT_INTELLIGENCE_KEY",
+    ]
+    missing_vars = [var for var in required_vars if not os.environ.get(var)]
+    if missing_vars:
+        print(f"WARNING: Missing environment variables: {', '.join(missing_vars)}")
+        print("The pipeline will fail without these credentials!")
+    else:
+        print("✓ Azure credentials found")
+    
     app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True)

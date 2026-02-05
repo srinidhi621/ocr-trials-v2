@@ -1,0 +1,38 @@
+# Python
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Application data
+output/
+uploads/
+inputs/
+*.pdf
+*.log
+
+# Development files
+.env
+.DS_Store
+.ui.pid
+.ui.log
+.ui_state.json
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Scripts
+scripts/
+
+# Tests
+test_*.py
