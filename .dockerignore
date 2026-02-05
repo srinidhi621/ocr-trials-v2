@@ -36,3 +36,4 @@ scripts/
 
 # Tests
 test_*.py
+!test_import.py

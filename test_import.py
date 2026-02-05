@@ -51,7 +51,7 @@ def test_imports():
     
     try:
         print("5. Testing providers...")
-        from providers.azure_provider import AzureDocumentIntelligenceProvider
+        from providers.azure_provider import AzureProvider
         print("   ✓ providers OK")
     except Exception as e:
         print(f"   ✗ providers FAILED: {e}")
